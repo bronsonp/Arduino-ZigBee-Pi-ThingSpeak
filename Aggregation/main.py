@@ -15,8 +15,14 @@ import thingspeak as ts
 
 # Parameters
 api_keys = {
-    37372: "BKSHA6VI5K13A6HL",
-    38007: "8BXAPC55OULDOZ9O"
+    39055: "JVFKE4O33HGKVZMD", # Woodlands0
+    39056: "PCXM1T21GVHZVIHN", # Woodlands1
+    39057: "LGK177F01UY4P9DK", # Woodlands2
+    38007: "8BXAPC55OULDOZ9O", # Sandstorm0
+    38795: "I62SO3BXFY8VPVYU", # Grassland0
+    39052: "0XFDA2TYQ6S14LXK", # Grassland1
+    39054: "X2269TLALFSHYRFG" # Grassland2
+    
 }
 
 # Constants
@@ -48,7 +54,7 @@ def process_data():
         q = rxQueue[addr]
 
         # search for start char
-        while not q.empty() and (q.queue[0] is not START_CH): q.get()
+        while not q.empty() and (q.queue[0] != START_CH): q.get()
 
         # wait for full message (comes in blocks)
         if (not q.empty()) and (END_CH in q.queue):
@@ -57,7 +63,7 @@ def process_data():
             # compile message
             ch = ""
             payload = ""
-            while not q.empty() and (ch is not END_CH):
+            while not q.empty() and (ch != END_CH):
                 ch = q.get()
                 #print(ch, end='')
                 payload += ch # simple and not so inefficient after all
@@ -93,11 +99,19 @@ def process_data():
             #print(grouped)
             for ch in grouped:
                 if ch in channels:
-                    channels[ch].update(grouped[ch])
+                	sent = False
+                	while(not sent):
+                		try:
+                			channels[ch].update(grouped[ch])
+                			print("Upload Successful")
+                			sent = True
+                		except:
+                			print("Failed to upload")
             print(grouped)
 
 def find_port():
-    return "/dev/tty.usbserial-DA01I3FX"
+	ports = glob.glob("/dev/ttyUSB*")
+	return ports[0]
 
 def init():
     global xbee, ser, channels
@@ -127,8 +141,11 @@ def end():
     ser.close()
 
 if __name__ == "__main__":
-    init()
-    try:
-        main()
-    finally:
-        end()
+    while True:
+    	try:
+    		init()
+    		main()
+    	except IOError:
+    		print("Error mate!")
+    	finally:
+            end()
